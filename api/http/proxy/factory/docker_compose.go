@@ -49,13 +49,18 @@ func (factory *ProxyFactory) NewDockerComposeAgentProxy(endpoint *portainer.Endp
 	proxy.Transport = dockercompose.NewAgentTransport(factory.signatureService, httpTransport)
 
 	proxyServer := &ProxyServer{
-		&http.Server{
+		server: &http.Server{
 			Handler: proxy,
 		},
-		0,
+		Port: 0,
 	}
 
-	return proxyServer, proxyServer.start()
+	err = proxyServer.start()
+	if err != nil {
+		return nil, err
+	}
+
+	return proxyServer, err
 }
 
 func (proxy *ProxyServer) start() error {
@@ -72,7 +77,7 @@ func (proxy *ProxyServer) start() error {
 		err := proxy.server.Serve(listener)
 		log.Printf("Exiting Proxy server %s\n", proxyHost)
 
-		if err != http.ErrServerClosed {
+		if err != nil && err != http.ErrServerClosed {
 			log.Printf("Proxy server %s exited with an error: %s\n", proxyHost, err)
 		}
 	}()
