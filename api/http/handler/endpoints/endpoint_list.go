@@ -46,7 +46,9 @@ func (handler *Handler) endpointList(w http.ResponseWriter, r *http.Request) *ht
 
 	groupID, _ := request.RetrieveNumericQueryParameter(r, "groupId", true)
 	limit, _ := request.RetrieveNumericQueryParameter(r, "limit", true)
-	endpointType, _ := request.RetrieveNumericQueryParameter(r, "type", true)
+
+	var endpointTypes []int
+	request.RetrieveJSONQueryParameter(r, "types", &endpointTypes, true)
 
 	var tagIDs []portainer.TagID
 	request.RetrieveJSONQueryParameter(r, "tagIds", &tagIDs, true)
@@ -98,8 +100,8 @@ func (handler *Handler) endpointList(w http.ResponseWriter, r *http.Request) *ht
 		filteredEndpoints = filterEndpointsBySearchCriteria(filteredEndpoints, endpointGroups, tagsMap, search)
 	}
 
-	if endpointType != 0 {
-		filteredEndpoints = filterEndpointsByType(filteredEndpoints, portainer.EndpointType(endpointType))
+	if endpointTypes != nil {
+		filteredEndpoints = filterEndpointsByTypes(filteredEndpoints, endpointTypes)
 	}
 
 	if tagIDs != nil {
@@ -212,11 +214,16 @@ func endpointGroupMatchSearchCriteria(endpoint *portainer.Endpoint, endpointGrou
 	return false
 }
 
-func filterEndpointsByType(endpoints []portainer.Endpoint, endpointType portainer.EndpointType) []portainer.Endpoint {
+func filterEndpointsByTypes(endpoints []portainer.Endpoint, endpointTypes []int) []portainer.Endpoint {
 	filteredEndpoints := make([]portainer.Endpoint, 0)
 
+	typeSet := map[portainer.EndpointType]bool{}
+	for _, endpointType := range endpointTypes {
+		typeSet[portainer.EndpointType(endpointType)] = true
+	}
+
 	for _, endpoint := range endpoints {
-		if endpoint.Type == endpointType {
+		if typeSet[endpoint.Type] {
 			filteredEndpoints = append(filteredEndpoints, endpoint)
 		}
 	}
