@@ -24,10 +24,19 @@
           </div>
           <div class="form-group" ng-if="$ctrl.edgeGroups">
             <div class="col-sm-12">
-              <edge-groups-selector ng-if="!$ctrl.noGroups" model="$ctrl.formValues.Groups" on-change="(onChangeGroups)" items="$ctrl.edgeGroups"></edge-groups-selector>
+              <edge-groups-selector ng-if="!$ctrl.noGroups" model="$ctrl.formValues.Groups" on-change="($ctrl.onChangeGroups)" items="$ctrl.edgeGroups"></edge-groups-selector>
             </div>
             <div ng-if="$ctrl.noGroups" class="col-sm-12 small text-muted">
               No Edge groups are available. Head over to the <a ui-sref="edge.groups">Edge groups view</a> to create one.
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-12">
+              <div class="small text-muted space-right" ng-if="$ctrl.state.hasKubeEndpoint">
+                <i class="fa fa-exclamation-triangle orange-icon" aria-hidden="true"></i>
+                Portainer uses <a href="https://kompose.io/" target="_blank">Kompose</a> to convert your Compose manifest to a Kubernetes compliant manifest. Be wary that not all
+                the Compose format options are supported by Kompose at the moment.
+              </div>
             </div>
           </div>
           <!-- build-method -->

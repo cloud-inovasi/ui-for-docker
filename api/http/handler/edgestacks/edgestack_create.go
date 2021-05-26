@@ -2,6 +2,7 @@ package edgestacks
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -40,37 +41,6 @@ func (handler *Handler) edgeStackCreate(w http.ResponseWriter, r *http.Request) 
 	edgeStack, err := handler.createSwarmStack(method, r)
 	if err != nil {
 		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to create Edge stack", err}
-	}
-
-	endpoints, err := handler.DataStore.Endpoint().Endpoints()
-	if err != nil {
-		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to retrieve endpoints from database", err}
-	}
-
-	endpointGroups, err := handler.DataStore.EndpointGroup().EndpointGroups()
-	if err != nil {
-		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to retrieve endpoint groups from database", err}
-	}
-
-	edgeGroups, err := handler.DataStore.EdgeGroup().EdgeGroups()
-	if err != nil {
-		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to retrieve edge groups from database", err}
-	}
-
-	relatedEndpoints, err := edge.EdgeStackRelatedEndpoints(edgeStack.EdgeGroups, endpoints, endpointGroups, edgeGroups)
-
-	for _, endpointID := range relatedEndpoints {
-		relation, err := handler.DataStore.EndpointRelation().EndpointRelation(endpointID)
-		if err != nil {
-			return &httperror.HandlerError{http.StatusInternalServerError, "Unable to find endpoint relation in database", err}
-		}
-
-		relation.EdgeStacks[edgeStack.ID] = true
-
-		err = handler.DataStore.EndpointRelation().UpdateEndpointRelation(endpointID, relation)
-		if err != nil {
-			return &httperror.HandlerError{http.StatusInternalServerError, "Unable to persist endpoint relation in database", err}
-		}
 	}
 
 	return response.JSON(w, edgeStack)
@@ -139,6 +109,26 @@ func (handler *Handler) createSwarmStackFromFileContent(r *http.Request) (*porta
 		return nil, err
 	}
 	stack.ProjectPath = projectPath
+
+	relationConfig, err := fetchEndpointRelationsConfig(handler.DataStore)
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching relations config: %w", err)
+	}
+
+	relatedEndpointIds, err := edge.EdgeStackRelatedEndpoints(stack.EdgeGroups, relationConfig.endpoints, relationConfig.endpointGroups, relationConfig.edgeGroups)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve related endpoints: %w", err)
+	}
+
+	err = handler.convertAndStoreKubeManifestIfNeeded(stack, relatedEndpointIds)
+	if err != nil {
+		return nil, fmt.Errorf("Failed creating and storing kube manifest: %w", err)
+	}
+
+	err = updateEndpointRelations(handler.DataStore.EndpointRelation(), stack.ID, relatedEndpointIds)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to update endpoint relations: %w", err)
+	}
 
 	err = handler.DataStore.EdgeStack().CreateEdgeStack(stack)
 	if err != nil {
@@ -224,6 +214,26 @@ func (handler *Handler) createSwarmStackFromGitRepository(r *http.Request) (*por
 		return nil, err
 	}
 
+	relationConfig, err := fetchEndpointRelationsConfig(handler.DataStore)
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching relations config: %w", err)
+	}
+
+	relatedEndpointIds, err := edge.EdgeStackRelatedEndpoints(stack.EdgeGroups, relationConfig.endpoints, relationConfig.endpointGroups, relationConfig.edgeGroups)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve related endpoints: %w", err)
+	}
+
+	err = handler.convertAndStoreKubeManifestIfNeeded(stack, relatedEndpointIds)
+	if err != nil {
+		return nil, fmt.Errorf("Failed creating and storing kube manifest: %w", err)
+	}
+
+	err = updateEndpointRelations(handler.DataStore.EndpointRelation(), stack.ID, relatedEndpointIds)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to update endpoint relations: %w", err)
+	}
+
 	err = handler.DataStore.EdgeStack().CreateEdgeStack(stack)
 	if err != nil {
 		return nil, err
@@ -284,11 +294,31 @@ func (handler *Handler) createSwarmStackFromFileUpload(r *http.Request) (*portai
 	}
 
 	stackFolder := strconv.Itoa(int(stack.ID))
-	projectPath, err := handler.FileService.StoreEdgeStackFileFromBytes(stackFolder, stack.EntryPoint, []byte(payload.StackFileContent))
+	projectPath, err := handler.FileService.StoreEdgeStackFileFromBytes(stackFolder, stack.EntryPoint, payload.StackFileContent)
 	if err != nil {
 		return nil, err
 	}
 	stack.ProjectPath = projectPath
+
+	relationConfig, err := fetchEndpointRelationsConfig(handler.DataStore)
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching relations config: %w", err)
+	}
+
+	relatedEndpointIds, err := edge.EdgeStackRelatedEndpoints(stack.EdgeGroups, relationConfig.endpoints, relationConfig.endpointGroups, relationConfig.edgeGroups)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve related endpoints: %w", err)
+	}
+
+	err = handler.convertAndStoreKubeManifestIfNeeded(stack, relatedEndpointIds)
+	if err != nil {
+		return nil, fmt.Errorf("Failed creating and storing kube manifest: %w", err)
+	}
+
+	err = updateEndpointRelations(handler.DataStore.EndpointRelation(), stack.ID, relatedEndpointIds)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to update endpoint relations: %w", err)
+	}
 
 	err = handler.DataStore.EdgeStack().CreateEdgeStack(stack)
 	if err != nil {
@@ -309,5 +339,24 @@ func (handler *Handler) validateUniqueName(name string) error {
 			return errors.New("Edge stack name must be unique")
 		}
 	}
+	return nil
+}
+
+// updateEndpointRelations adds a relation between the Edge Stack to the related endpoints
+func updateEndpointRelations(endpointRelationService portainer.EndpointRelationService, edgeStackID portainer.EdgeStackID, relatedEndpointIds []portainer.EndpointID) error {
+	for _, endpointID := range relatedEndpointIds {
+		relation, err := endpointRelationService.EndpointRelation(endpointID)
+		if err != nil {
+			return fmt.Errorf("unable to find endpoint relation in database: %w", err)
+		}
+
+		relation.EdgeStacks[edgeStackID] = true
+
+		err = endpointRelationService.UpdateEndpointRelation(endpointID, relation)
+		if err != nil {
+			return fmt.Errorf("unable to persist endpoint relation in database: %w", err)
+		}
+	}
+
 	return nil
 }

@@ -25,7 +25,7 @@ angular.module('portainer.edge').factory('EdgeStackService', function EdgeStackS
   };
 
   service.updateStack = async function updateStack(id, stack) {
-    return EdgeStacks.update({ id }, stack);
+    return EdgeStacks.update({ id }, stack).$promise;
   };
 
   service.createStackFromFileContent = async function createStackFromFileContent(name, stackFileContent, edgeGroups) {

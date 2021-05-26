@@ -196,7 +196,10 @@ type (
 		ProjectPath  string                         `json:"ProjectPath"`
 		EntryPoint   string                         `json:"EntryPoint"`
 		Version      int                            `json:"Version"`
-		Prune        bool                           `json:"Prune"`
+		ManifestPath string
+
+		// Deprecated
+		Prune bool `json:"Prune"`
 	}
 
 	//EdgeStackID represents an edge stack id

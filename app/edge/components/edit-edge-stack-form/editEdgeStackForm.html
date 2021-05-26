@@ -4,7 +4,16 @@
   </div>
   <div class="form-group">
     <div class="col-sm-12">
-      <edge-groups-selector model="$ctrl.model.EdgeGroups" items="$ctrl.edgeGroups"></edge-groups-selector>
+      <edge-groups-selector model="$ctrl.model.EdgeGroups" items="$ctrl.edgeGroups" on-change="($ctrl.onChangeGroups)"></edge-groups-selector>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-12">
+      <div class="small text-muted space-right" ng-if="$ctrl.state.hasKubeEndpoint">
+        <i class="fa fa-exclamation-triangle orange-icon" aria-hidden="true"></i>
+        Portainer uses <a href="https://kompose.io/" target="_blank">Kompose</a> to convert your Compose manifest to a Kubernetes compliant manifest. Be wary that not all the
+        Compose format options are supported by Kompose at the moment.
+      </div>
     </div>
   </div>
 
@@ -33,22 +42,6 @@
     </div>
   </div>
   <!-- !web-editor -->
-
-  <div class="col-sm-12 form-section-title">
-    Options
-  </div>
-  <div class="form-group">
-    <div class="col-sm-12">
-      <label for="EnablePrune" class="control-label text-left">
-        Prune services
-        <portainer-tooltip position="bottom" message="Prune services that are not longer referenced in the stack file."></portainer-tooltip>
-      </label>
-      <label class="switch" style="margin-left: 20px;">
-        <input type="checkbox" name="EnablePrune" ng-model="$ctrl.model.Prune" />
-        <i></i>
-      </label>
-    </div>
-  </div>
 
   <!-- actions -->
   <div class="col-sm-12 form-section-title">
