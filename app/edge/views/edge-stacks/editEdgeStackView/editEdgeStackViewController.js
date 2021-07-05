@@ -39,6 +39,7 @@ export class EditEdgeStackViewController {
       this.formValues = {
         StackFileContent: file,
         EdgeGroups: this.stack.EdgeGroups,
+        DeploymentType: this.stack.DeploymentType,
       };
       this.oldFileContent = this.formValues.StackFileContent;
     } catch (err) {
