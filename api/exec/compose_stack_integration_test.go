@@ -3,6 +3,7 @@
 package exec
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -49,7 +50,9 @@ func Test_UpAndDown(t *testing.T) {
 		t.Fatalf("Failed creating manager: %s", err)
 	}
 
-	err = w.Up(stack, endpoint)
+	ctx := context.TODO()
+
+	err = w.Up(ctx, stack, endpoint)
 	if err != nil {
 		t.Fatalf("Error calling docker-compose up: %s", err)
 	}
@@ -58,7 +61,7 @@ func Test_UpAndDown(t *testing.T) {
 		t.Fatal("container should exist")
 	}
 
-	err = w.Down(stack, endpoint)
+	err = w.Down(ctx, stack, endpoint)
 	if err != nil {
 		t.Fatalf("Error calling docker-compose down: %s", err)
 	}
