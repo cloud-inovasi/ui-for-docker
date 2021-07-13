@@ -1270,6 +1270,7 @@ type (
 		Logout(endpoint *Endpoint) error
 		Deploy(stack *Stack, prune bool, endpoint *Endpoint) error
 		Remove(stack *Stack, endpoint *Endpoint) error
+		NormalizeStackName(name string) string
 	}
 
 	// TagService represents a service for managing tag data

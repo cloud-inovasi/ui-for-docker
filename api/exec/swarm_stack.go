@@ -8,9 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"runtime"
+	"strings"
 
-	"github.com/portainer/portainer/api"
+	portainer "github.com/portainer/portainer/api"
 )
 
 // SwarmStackManager represents a service for managing stacks.
@@ -188,4 +190,9 @@ func (manager *SwarmStackManager) retrieveConfigurationFromDisk(path string) (ma
 	}
 
 	return config, nil
+}
+
+func (manager *SwarmStackManager) NormalizeStackName(name string) string {
+	r := regexp.MustCompile("[^a-z0-9]+")
+	return r.ReplaceAllString(strings.ToLower(name), "")
 }
