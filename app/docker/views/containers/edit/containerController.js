@@ -118,6 +118,8 @@ angular.module('portainer.docker').controller('ContainerController', [
             !allowPrivilegedModeForRegularUsers;
 
           $scope.displayRecreateButton = !inSwarm && !autoRemove && (admin || !settingRestrictsRegularUsers);
+
+          $scope.container.Config.Env.sort((a, b) => a.localeCompare(b));
         })
         .catch(function error(err) {
           Notifications.error('Failure', err, 'Unable to retrieve container info');
