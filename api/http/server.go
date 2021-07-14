@@ -26,6 +26,7 @@ import (
 	"github.com/portainer/portainer/api/http/handler/endpointproxy"
 	"github.com/portainer/portainer/api/http/handler/endpoints"
 	"github.com/portainer/portainer/api/http/handler/file"
+	"github.com/portainer/portainer/api/http/handler/ldap"
 	"github.com/portainer/portainer/api/http/handler/motd"
 	"github.com/portainer/portainer/api/http/handler/registries"
 	"github.com/portainer/portainer/api/http/handler/resourcecontrols"
@@ -51,7 +52,7 @@ import (
 
 // Server implements the portainer.Server interface
 type Server struct {
-	AuthorizationService 		*authorization.Service
+	AuthorizationService        *authorization.Service
 	BindAddress                 string
 	AssetsPath                  string
 	Status                      *portainer.Status
@@ -154,6 +155,11 @@ func (server *Server) Start() error {
 	endpointProxyHandler.ReverseTunnelService = server.ReverseTunnelService
 
 	var fileHandler = file.NewHandler(filepath.Join(server.AssetsPath, "public"))
+
+	var ldapHandler = ldap.NewHandler(requestBouncer)
+	ldapHandler.DataStore = server.DataStore
+	ldapHandler.FileService = server.FileService
+	ldapHandler.LDAPService = server.LDAPService
 
 	var motdHandler = motd.NewHandler(requestBouncer)
 

@@ -54,28 +54,32 @@ func (handler *Handler) authenticate(w http.ResponseWriter, r *http.Request) *ht
 	var payload authenticatePayload
 	err := request.DecodeAndValidateJSONPayload(r, &payload)
 	if err != nil {
-		return &httperror.HandlerError{http.StatusBadRequest, "Invalid request payload", err}
+		return &httperror.HandlerError{StatusCode: http.StatusBadRequest, Message: "Invalid request payload", Err: err}
 	}
 
 	settings, err := handler.DataStore.Settings().Settings()
 	if err != nil {
-		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to retrieve settings from the database", err}
+		return &httperror.HandlerError{StatusCode: http.StatusInternalServerError, Message: "Unable to retrieve settings from the database", Err: err}
 	}
 
 	u, err := handler.DataStore.User().UserByUsername(payload.Username)
 	if err != nil && err != bolterrors.ErrObjectNotFound {
-		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to retrieve a user with the specified username from the database", err}
+		return &httperror.HandlerError{StatusCode: http.StatusInternalServerError, Message: "Unable to retrieve a user with the specified username from the database", Err: err}
 	}
 
 	if err == bolterrors.ErrObjectNotFound && (settings.AuthenticationMethod == portainer.AuthenticationInternal || settings.AuthenticationMethod == portainer.AuthenticationOAuth) {
-		return &httperror.HandlerError{http.StatusUnprocessableEntity, "Invalid credentials", httperrors.ErrUnauthorized}
+		return &httperror.HandlerError{StatusCode: http.StatusUnprocessableEntity, Message: "Invalid credentials", Err: httperrors.ErrUnauthorized}
 	}
 
 	if settings.AuthenticationMethod == portainer.AuthenticationLDAP {
-		if u == nil && settings.LDAPSettings.AutoCreateUsers {
+		if u == nil && (settings.LDAPSettings.AutoCreateUsers || settings.LDAPSettings.AdminAutoPopulate) {
 			return handler.authenticateLDAPAndCreateUser(w, payload.Username, payload.Password, &settings.LDAPSettings)
-		} else if u == nil && !settings.LDAPSettings.AutoCreateUsers {
-			return &httperror.HandlerError{http.StatusUnprocessableEntity, "Invalid credentials", httperrors.ErrUnauthorized}
+		} else if u == nil && !settings.LDAPSettings.AutoCreateUsers && !settings.LDAPSettings.AdminAutoPopulate {
+			return &httperror.HandlerError{
+				StatusCode: http.StatusUnprocessableEntity,
+				Message:    "Invalid credentials",
+				Err:        httperrors.ErrUnauthorized,
+			}
 		}
 		return handler.authenticateLDAP(w, u, payload.Password, &settings.LDAPSettings)
 	}
@@ -89,6 +93,36 @@ func (handler *Handler) authenticateLDAP(w http.ResponseWriter, user *portainer.
 		return handler.authenticateInternal(w, user, password)
 	}
 
+	if ldapSettings.AdminAutoPopulate {
+		userGroups, err := handler.LDAPService.GetUserGroups(user.Username, ldapSettings)
+		if err != nil {
+			return &httperror.HandlerError{
+				StatusCode: http.StatusUnprocessableEntity,
+				Message:    "Failed to retrieve user groups from LDAP server",
+				Err:        err,
+			}
+		}
+		adminGroupsMap := make(map[string]bool)
+		for _, adminGroup := range ldapSettings.AdminGroups {
+			adminGroupsMap[adminGroup] = true
+		}
+
+		for _, userGroup := range userGroups {
+			if adminGroupsMap[userGroup] {
+				user.Role = portainer.AdministratorRole
+				if err := handler.DataStore.User().UpdateUser(user.ID, user); err != nil {
+					return &httperror.HandlerError{
+						StatusCode: http.StatusInternalServerError,
+						Message:    "Unable to update user role inside the database",
+						Err:        err,
+					}
+
+				}
+				break
+			}
+		}
+	}
+
 	err = handler.addUserIntoTeams(user, ldapSettings)
 	if err != nil {
 		log.Printf("Warning: unable to automatically add user into teams: %s\n", err.Error())
@@ -100,7 +134,7 @@ func (handler *Handler) authenticateLDAP(w http.ResponseWriter, user *portainer.
 func (handler *Handler) authenticateInternal(w http.ResponseWriter, user *portainer.User, password string) *httperror.HandlerError {
 	err := handler.CryptoService.CompareHashAndData(user.Password, password)
 	if err != nil {
-		return &httperror.HandlerError{http.StatusUnprocessableEntity, "Invalid credentials", httperrors.ErrUnauthorized}
+		return &httperror.HandlerError{StatusCode: http.StatusUnprocessableEntity, Message: "Invalid credentials", Err: httperrors.ErrUnauthorized}
 	}
 
 	return handler.writeToken(w, user)
@@ -109,7 +143,7 @@ func (handler *Handler) authenticateInternal(w http.ResponseWriter, user *portai
 func (handler *Handler) authenticateLDAPAndCreateUser(w http.ResponseWriter, username, password string, ldapSettings *portainer.LDAPSettings) *httperror.HandlerError {
 	err := handler.LDAPService.AuthenticateUser(username, password, ldapSettings)
 	if err != nil {
-		return &httperror.HandlerError{http.StatusUnprocessableEntity, "Invalid credentials", err}
+		return &httperror.HandlerError{StatusCode: http.StatusUnprocessableEntity, Message: "Invalid credentials", Err: err}
 	}
 
 	user := &portainer.User{
@@ -117,9 +151,31 @@ func (handler *Handler) authenticateLDAPAndCreateUser(w http.ResponseWriter, use
 		Role:     portainer.StandardUserRole,
 	}
 
+	if ldapSettings.AdminAutoPopulate {
+		userGroups, err := handler.LDAPService.GetUserGroups(username, ldapSettings)
+		if err != nil {
+			return &httperror.HandlerError{
+				StatusCode: http.StatusUnprocessableEntity,
+				Message:    "Failed to retrieve user groups from LDAP server",
+				Err:        err,
+			}
+		}
+		adminGroupsMap := make(map[string]bool)
+		for _, adminGroup := range ldapSettings.AdminGroups {
+			adminGroupsMap[adminGroup] = true
+		}
+
+		for _, userGroup := range userGroups {
+			if adminGroupsMap[userGroup] {
+				user.Role = portainer.AdministratorRole
+				break
+			}
+		}
+	}
+
 	err = handler.DataStore.User().CreateUser(user)
 	if err != nil {
-		return &httperror.HandlerError{http.StatusInternalServerError, "Unable to persist user inside the database", err}
+		return &httperror.HandlerError{StatusCode: http.StatusInternalServerError, Message: "Unable to persist user inside the database", Err: err}
 	}
 
 	err = handler.addUserIntoTeams(user, ldapSettings)
