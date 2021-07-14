@@ -232,8 +232,8 @@ angular
       }
 
       try {
-        $scope.containers = await ContainerService.containers();
-        $scope.containerNames = ContainerHelper.getContainerNames($scope.containers);
+        const containers = await ContainerService.containers(true);
+        $scope.containerNames = ContainerHelper.getContainerNames(containers);
       } catch (err) {
         Notifications.error('Failure', err, 'Unable to retrieve Containers');
       }

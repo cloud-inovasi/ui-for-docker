@@ -291,7 +291,7 @@ angular.module('portainer.app').controller('StackController', [
       $q.all({
         stack: StackService.stack(id),
         groups: GroupService.groups(),
-        containers: ContainerService.containers(),
+        containers: ContainerService.containers(true),
       })
         .then(function success(data) {
           var stack = data.stack;
