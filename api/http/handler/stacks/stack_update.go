@@ -160,6 +160,7 @@ func (handler *Handler) updateComposeStack(r *http.Request, stack *portainer.Sta
 
 	stack.UpdateDate = time.Now().Unix()
 	stack.UpdatedBy = config.user.Username
+	stack.Status = portainer.StackStatusActive
 
 	err = handler.deployComposeStack(config)
 	if err != nil {
