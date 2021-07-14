@@ -45,6 +45,10 @@ angular.module('portainer.app').factory('SettingsService', [
       return Settings.checkLDAPConnectivity({}, settings).$promise;
     };
 
+    service.searchLDAPGroups = function (settings) {
+      return Settings.searchLdapGroups({}, settings).$promise;
+    };
+
     return service;
   },
 ]);

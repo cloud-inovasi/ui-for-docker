@@ -11,6 +11,7 @@ angular.module('portainer.app').factory('Settings', [
         update: { method: 'PUT', ignoreLoadingBar: true },
         publicSettings: { method: 'GET', params: { subResource: 'public' }, ignoreLoadingBar: true },
         checkLDAPConnectivity: { method: 'PUT', params: { subResource: 'authentication', action: 'checkLDAP' } },
+        searchLdapGroups: { method: 'GET', params: { action: 'searchLdapGroups' } },
       }
     );
   },

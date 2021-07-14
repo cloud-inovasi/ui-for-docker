@@ -6,7 +6,10 @@ angular.module('portainer.app').controller('SettingsAuthenticationController', [
   'SettingsService',
   'FileUploadService',
   'TeamService',
+
   function ($q, $scope, $state, Notifications, SettingsService, FileUploadService, TeamService) {
+    const DEFAULT_GROUP_FILTER = '(objectClass=groupOfNames)';
+
     $scope.state = {
       successfulConnectivityCheck: false,
       failedConnectivityCheck: false,
@@ -63,8 +66,25 @@ angular.module('portainer.app').controller('SettingsAuthenticationController', [
             GroupAttribute: '',
           },
         ],
+        AdminGroupSearchSettings: [
+          {
+            GroupBaseDN: '',
+            GroupFilter: '',
+            GroupAttribute: '',
+          },
+        ],
+        AdminAutoPopulate: false,
         AutoCreateUsers: true,
       },
+    };
+
+    $scope.searchGroups = function searchGroups() {
+      const settings = {
+        ...$scope.settings.LDAPSettings,
+        GroupSearchSettings: $scope.settings.LDAPSettings.GroupSearchSettings.map((search) => ({ ...search, GroupFilter: search.GroupFilter || DEFAULT_GROUP_FILTER })),
+      };
+
+      return SettingsService.searchLDAPGroups(settings);
     };
 
     $scope.isOauthEnabled = function isOauthEnabled() {
@@ -84,6 +104,14 @@ angular.module('portainer.app').controller('SettingsAuthenticationController', [
     };
 
     $scope.removeGroupSearchConfiguration = function (index) {
+      $scope.formValues.LDAPSettings.GroupSearchSettings.splice(index, 1);
+    };
+
+    $scope.addAdminGroupSearchConfiguration = function () {
+      $scope.formValues.LDAPSettings.GroupSearchSettings.push({ GroupBaseDN: '', GroupAttribute: '', GroupFilter: '' });
+    };
+
+    $scope.removeAdminGroupSearchConfiguration = function (index) {
       $scope.formValues.LDAPSettings.GroupSearchSettings.splice(index, 1);
     };
 
