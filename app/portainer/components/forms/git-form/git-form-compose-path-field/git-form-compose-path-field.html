@@ -6,6 +6,15 @@
 <div class="form-group">
   <label for="stack_repository_path" class="col-sm-2 control-label text-left">Compose path</label>
   <div class="col-sm-10">
-    <input type="text" class="form-control" ng-model="$ctrl.value" ng-change="$ctrl.onChange($ctrl.value)" id="stack_repository_path" placeholder="docker-compose.yml" />
+    <input
+      type="text"
+      class="form-control"
+      name="repoPathField"
+      ng-model="$ctrl.value"
+      ng-change="$ctrl.onChange($ctrl.value)"
+      id="stack_repository_path"
+      placeholder="docker-compose.yml"
+      required
+    />
   </div>
 </div>

@@ -1,13 +1,12 @@
 export class EditEdgeGroupController {
   /* @ngInject */
-  constructor(EdgeGroupService, GroupService, TagService, Notifications, $state, $async, EndpointService, EndpointHelper) {
+  constructor(EdgeGroupService, GroupService, TagService, Notifications, $state, $async, EndpointHelper) {
     this.EdgeGroupService = EdgeGroupService;
     this.GroupService = GroupService;
     this.TagService = TagService;
     this.Notifications = Notifications;
     this.$state = $state;
     this.$async = $async;
-    this.EndpointService = EndpointService;
     this.EndpointHelper = EndpointHelper;
 
     this.state = {
