@@ -334,8 +334,8 @@ class KubernetesNodeController {
   async getEventsAsync() {
     try {
       this.state.eventsLoading = true;
-      this.events = await this.KubernetesEventService.get();
-      this.events = _.filter(this.events.items, (item) => item.involvedObject.kind === 'Node');
+      const events = await this.KubernetesEventService.get();
+      this.events = events.filter((item) => item.Involved.kind === 'Node');
       this.state.eventWarningCount = KubernetesEventHelper.warningCount(this.events);
     } catch (err) {
       this.Notifications.error('Failure', err, 'Unable to retrieve node events');
