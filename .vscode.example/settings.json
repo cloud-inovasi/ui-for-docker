@@ -1,0 +1,4 @@
+{
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast", "-E", "exportloopref"]
+}
