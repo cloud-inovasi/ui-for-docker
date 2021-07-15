@@ -13,6 +13,8 @@ export function VolumeViewModel(data) {
   }
   this.Mountpoint = data.Mountpoint;
 
+  this.ResourceId = data.ResourceID;
+
   if (data.Portainer) {
     if (data.Portainer.ResourceControl) {
       this.ResourceControl = new ResourceControlViewModel(data.Portainer.ResourceControl);

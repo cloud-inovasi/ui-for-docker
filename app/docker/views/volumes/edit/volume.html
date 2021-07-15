@@ -78,7 +78,7 @@
 </div>
 
 <!-- access-control-panel -->
-<por-access-control-panel ng-if="volume" resource-id="volume.Id + volume.CreatedAt" resource-control="volume.ResourceControl" resource-type="'volume'"> </por-access-control-panel>
+<por-access-control-panel ng-if="volume" resource-id="volume.ResourceId" resource-control="volume.ResourceControl" resource-type="'volume'"> </por-access-control-panel>
 <!-- !access-control-panel -->
 
 <div class="row" ng-if="!(volume.Options | emptyobject)">

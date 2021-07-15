@@ -1,13 +1,14 @@
 package migrator
 
-func (m *Migrator) migrateDBVersionTo30() error {
-	if err := m.migrateSettings(); err != nil {
+func (m *Migrator) migrateDBVersionToDB30() error {
+	if err := m.migrateSettingsToDB30(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (m *Migrator) migrateSettings() error {
+func (m *Migrator) migrateSettingsToDB30() error {
 	legacySettings, err := m.settingsService.Settings()
 	if err != nil {
 		return err

@@ -161,9 +161,7 @@ func (transport *Transport) proxyAgentRequest(r *http.Request) (*http.Response, 
 
 		volumeName := volumeIDParameter[0]
 
-		agentTargetHeader := r.Header.Get(portainer.PortainerAgentTargetHeader)
-
-		resourceID, err := transport.getVolumeResourceID(agentTargetHeader, volumeName)
+		resourceID, err := transport.getVolumeResourceID(volumeName)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +298,7 @@ func (transport *Transport) proxyServiceRequest(request *http.Request) (*http.Re
 func (transport *Transport) proxyVolumeRequest(request *http.Request) (*http.Response, error) {
 	switch requestPath := request.URL.Path; requestPath {
 	case "/volumes/create":
-		return transport.decorateVolumeResourceCreationOperation(request, volumeObjectIdentifier, portainer.VolumeResourceControl)
+		return transport.decorateVolumeResourceCreationOperation(request, portainer.VolumeResourceControl)
 
 	case "/volumes/prune":
 		return transport.administratorOperation(request)
