@@ -5,30 +5,28 @@ import { KubernetesApplicationDataAccessPolicies, KubernetesApplicationDeploymen
  * KubernetesApplicationFormValues Model
  */
 export function KubernetesApplicationFormValues() {
-  return {
-    ApplicationType: undefined, // will only exist for formValues generated from Application (app edit situation)
-    ResourcePool: {},
-    Name: '',
-    StackName: '',
-    ApplicationOwner: '',
-    ImageModel: new PorImageRegistryModel(),
-    Note: '',
-    MemoryLimit: 0,
-    CpuLimit: 0,
-    DeploymentType: KubernetesApplicationDeploymentTypes.REPLICATED,
-    ReplicaCount: 1,
-    AutoScaler: {},
-    Containers: [],
-    EnvironmentVariables: [], // KubernetesApplicationEnvironmentVariableFormValue list
-    DataAccessPolicy: KubernetesApplicationDataAccessPolicies.SHARED,
-    PersistedFolders: [], // KubernetesApplicationPersistedFolderFormValue list
-    Configurations: [], // KubernetesApplicationConfigurationFormValue list
-    PublishingType: KubernetesApplicationPublishingTypes.INTERNAL,
-    PublishedPorts: [], // KubernetesApplicationPublishedPortFormValue list
-    PlacementType: KubernetesApplicationPlacementTypes.PREFERRED,
-    Placements: [], // KubernetesApplicationPlacementFormValue list
-    OriginalIngresses: undefined,
-  };
+  this.ApplicationType = undefined; // will only exist for formValues generated from Application (app edit situation;
+  this.ResourcePool = {};
+  this.Name = '';
+  this.StackName = '';
+  this.ApplicationOwner = '';
+  this.ImageModel = new PorImageRegistryModel();
+  this.Note = '';
+  this.MemoryLimit = 0;
+  this.CpuLimit = 0;
+  this.DeploymentType = KubernetesApplicationDeploymentTypes.REPLICATED;
+  this.ReplicaCount = 1;
+  this.AutoScaler = {};
+  this.Containers = [];
+  this.EnvironmentVariables = []; // KubernetesApplicationEnvironmentVariableFormValue lis;
+  this.DataAccessPolicy = KubernetesApplicationDataAccessPolicies.SHARED;
+  this.PersistedFolders = []; // KubernetesApplicationPersistedFolderFormValue lis;
+  this.Configurations = []; // KubernetesApplicationConfigurationFormValue lis;
+  this.PublishingType = KubernetesApplicationPublishingTypes.INTERNAL;
+  this.PublishedPorts = []; // KubernetesApplicationPublishedPortFormValue lis;
+  this.PlacementType = KubernetesApplicationPlacementTypes.PREFERRED;
+  this.Placements = []; // KubernetesApplicationPlacementFormValue lis;
+  this.OriginalIngresses = undefined;
 }
 
 export const KubernetesApplicationConfigurationFormValueOverridenKeyTypes = Object.freeze({
